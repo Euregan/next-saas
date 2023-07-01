@@ -1,0 +1,44 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  stripeId      String    @id
+  createdAt     DateTime  @default(now())
+  name          String?
+  plan          String
+  mbPerMonth    Float
+  retentionDays Int
+  expireDate    DateTime?
+  users         User[]
+  apiKeys       ApiKey[]
+}
+
+model ApiKey {
+  key         String    @id @unique
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  name        String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdById String    @db.Uuid
+  account     Account   @relation(fields: [accountId], references: [stripeId])
+  accountId   String
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now())
+  email     String   @unique
+  password  String
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [stripeId])
+  ApiKey    ApiKey[]
+}

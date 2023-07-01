@@ -1,0 +1,41 @@
+version: "3.6"
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: log
+      POSTGRES_PASSWORD: password
+      PGPASSWORD: password
+      POSTGRES_DB: log-saas
+    ports:
+      - 5432:5432
+
+  app:
+    image: node:16
+    user: "node"
+    working_dir: /home/node/app
+    volumes:
+      - ./:/home/node/app
+    ports:
+      - 3000:3000
+    command: npm run dev
+    environment:
+      DATABASE_URL: postgresql://log:password@db:5432/log-saas?schema=public
+      JWT_SECRET: secret
+
+  stripe-webhook:
+    image: stripe/stripe-cli:latest
+    command: listen --forward-to app:3000/api/webhooks/stripe --api-key ${STRIPE_SECRET_KEY}
+
+  prisma-studio:
+    image: node:16
+    user: "node"
+    working_dir: /home/node/app
+    volumes:
+      - ./:/home/node/app
+    ports:
+      - 5555:5555
+    command: npx prisma studio
+    environment:
+      DATABASE_URL: postgresql://log:password@db:5432/log-saas?schema=public
